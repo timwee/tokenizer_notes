@@ -4,7 +4,7 @@ use std::error::Error;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-pub fn read_bpe_openai(path: &str) -> Result<HashMap<Vec<u8>, u64>, Box<dyn Error>> {
+pub fn read_bpe_openai(path: &str) -> Result<HashMap<Vec<u8>, u32>, Box<dyn Error>> {
     let file = File::open(path)?;
     let reader = BufReader::new(file);
 
@@ -14,7 +14,7 @@ pub fn read_bpe_openai(path: &str) -> Result<HashMap<Vec<u8>, u64>, Box<dyn Erro
         let parts = line.split_whitespace().collect::<Vec<&str>>();
         if parts.len() == 2 {
             let token = BASE64_STANDARD.decode(parts[0])?;
-            let id = parts[1].parse::<u64>()?;
+            let id = parts[1].parse::<u32>()?;
             vocab.insert(token, id);
         }
     }
