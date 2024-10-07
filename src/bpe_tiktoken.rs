@@ -24,6 +24,11 @@ impl<'a, 'b> BPETiktoken<'a, 'b> {
         }
     }
 
+    fn cl100k_base() -> Self {
+        let vocab = read_bpe_openai("encoding_data/cl100k_base.tiktoken").unwrap();
+        Self::new(vocab, &CL100K_BASE_SPECIAL_TOKENS, &CL100K_BASE_PAT)
+    }
+
     // Note that we hash bytes when indexing into `vocab`, not token pairs. As long as we train BPE
     // the way we currently do, this is equivalent. An easy way to break this would be to decouple
     // merge priority from token index or to prevent specific token merges.
@@ -129,8 +134,7 @@ mod tests {
 
     #[test]
     fn test_basic_encode() {
-      let vocab = read_bpe_openai("encoding_data/cl100k_base.tiktoken").unwrap();
-      let bpe = BPETiktoken::new(vocab, &CL100K_BASE_SPECIAL_TOKENS, &CL100K_BASE_PAT);
+      let bpe = BPETiktoken::cl100k_base();
       assert_eq!(bpe.encode("0"), vec![15]);
       assert_eq!(bpe.encode("rer"), vec![38149]);
       assert_eq!(bpe.encode("'rer"), vec![2351, 81]);
