@@ -5,13 +5,13 @@ use phf::phf_map;
 use crate::io::read_bpe_openai;
 use fancy_regex::Regex;
 
-struct BPENaive<'a, 'b> {
+struct BPETiktoken<'a, 'b> {
     vocab: HashMap<Vec<u8>, Rank>,
     special_tokens: &'b phf::Map<&'static str, Rank>,
     split_pat: &'a Regex,
 }
 
-impl<'a, 'b> BPENaive<'a, 'b> {
+impl<'a, 'b> BPETiktoken<'a, 'b> {
     fn new(
         vocab: HashMap<Vec<u8>, Rank>,
         special_tokens: &'b phf::Map<&'static str, Rank>,
@@ -130,7 +130,7 @@ mod tests {
     #[test]
     fn test_basic_encode() {
       let vocab = read_bpe_openai("encoding_data/cl100k_base.tiktoken").unwrap();
-      let bpe = BPENaive::new(vocab, &CL100K_BASE_SPECIAL_TOKENS, &CL100K_BASE_PAT);
+      let bpe = BPETiktoken::new(vocab, &CL100K_BASE_SPECIAL_TOKENS, &CL100K_BASE_PAT);
       assert_eq!(bpe.encode("0"), vec![15]);
       assert_eq!(bpe.encode("rer"), vec![38149]);
       assert_eq!(bpe.encode("'rer"), vec![2351, 81]);

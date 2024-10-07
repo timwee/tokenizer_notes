@@ -1,3 +1,3 @@
-mod bpe_naive;
+mod bpe_tiktoken;
 mod io;
 pub mod registry;
