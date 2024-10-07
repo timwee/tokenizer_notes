@@ -5,28 +5,37 @@ use phf::phf_map;
 use crate::io::read_bpe_openai;
 use fancy_regex::Regex;
 
-struct BPETiktoken<'a, 'b> {
+struct BPETiktoken<'b> {
     vocab: HashMap<Vec<u8>, Rank>,
     special_tokens: &'b phf::Map<&'static str, Rank>,
-    split_pat: &'a Regex,
+    split_pat: Regex,
+    special_tokens_regex: Regex,
 }
 
-impl<'a, 'b> BPETiktoken<'a, 'b> {
+impl<'b> BPETiktoken<'b> {
     fn new(
         vocab: HashMap<Vec<u8>, Rank>,
         special_tokens: &'b phf::Map<&'static str, Rank>,
-        split_pat: &'a Regex,
+        split_pat: Regex,
     ) -> Self {
+      let special_tokens_regex = {
+            let _parts = special_tokens
+                .keys()
+                .map(|s| fancy_regex::escape(s))
+                .collect::<Vec<_>>();
+            Regex::new(&_parts.join("|")).unwrap()           
+        };
         Self {
             vocab,
             special_tokens,
-            split_pat,
+            split_pat: split_pat.clone(),
+            special_tokens_regex,
         }
     }
 
     fn cl100k_base() -> Self {
         let vocab = read_bpe_openai("encoding_data/cl100k_base.tiktoken").unwrap();
-        Self::new(vocab, &CL100K_BASE_SPECIAL_TOKENS, &CL100K_BASE_PAT)
+        Self::new(vocab, &CL100K_BASE_SPECIAL_TOKENS, CL100K_BASE_PAT.clone())
     }
 
     // Note that we hash bytes when indexing into `vocab`, not token pairs. As long as we train BPE
