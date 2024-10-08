@@ -10,6 +10,8 @@ struct BPETiktoken<'b> {
     special_tokens: &'b phf::Map<&'static str, Rank>,
     split_pat: Regex,
     special_tokens_regex: Regex,
+    decoder_vocab: HashMap<Rank, Vec<u8>>,
+    decoder_special_tokens: HashMap<Rank, Vec<u8>>,
 }
 
 impl<'b> BPETiktoken<'b> {
@@ -25,11 +27,20 @@ impl<'b> BPETiktoken<'b> {
                 .collect::<Vec<_>>();
             Regex::new(&_parts.join("|")).unwrap()
         };
+
+        let decoder_vocab = vocab.iter().map(|(k, v)| (*v, k.clone())).collect();
+        let decoder_special_tokens = special_tokens
+            .into_iter()
+            .map(|(k, v)| (*v, k.as_bytes().to_vec()))
+            .collect();
+
         Self {
             vocab,
             special_tokens,
             split_pat: split_pat.clone(),
             special_tokens_regex,
+            decoder_vocab,
+            decoder_special_tokens,
         }
     }
 
@@ -184,8 +195,16 @@ impl<'b> BPETiktoken<'b> {
         values
     }
 
-    fn decode(&self, ranks: &[Rank]) -> String {
-        todo!()
+    fn decode(&self, tokens: &[Rank]) -> Vec<u8> {
+        let mut ret = Vec::with_capacity(tokens.len() * 2);
+        for token in tokens {
+            let token_bytes = self
+                .decoder_vocab
+                .get(token)
+                .unwrap_or_else(|| &self.decoder_special_tokens[token]);
+            ret.extend(token_bytes);
+        }
+        ret
     }
 }
 
@@ -244,5 +263,26 @@ mod tests {
             bpe.encode("<|endoftext|> hello <|fim_prefix|> there <|fim_middle|>"),
             vec![100257, 24748, 220, 100258, 1070, 220, 100259]
         );
+    }
+
+    #[test]
+    fn test_basic_roundtrip() {
+        let bpe = BPETiktoken::cl100k_base();
+        let texts = vec![
+            "0",
+            "rer",
+            "'rer",
+            "today\n ",
+            "today\n \n",
+            "today\n  \n",
+            "hello world",
+            "👍",
+        ];
+
+        for text in texts {
+            let encoded: Vec<Rank> = bpe.encode(&text);
+            let decoded = bpe.decode(&encoded);
+            assert_eq!(decoded, text.as_bytes().to_vec());
+        }
     }
 }
