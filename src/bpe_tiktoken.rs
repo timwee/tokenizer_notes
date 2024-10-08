@@ -277,6 +277,8 @@ mod tests {
             "today\n  \n",
             "hello world",
             "👍",
+            "请考试我的软件！12345",
+            "<|endoftext|> hello <|fim_prefix|> there <|fim_middle|>",
         ];
 
         for text in texts {
